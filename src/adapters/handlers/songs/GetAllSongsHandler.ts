@@ -11,10 +11,6 @@ const GetSongs: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProxyResul
   try {
     const userId = event.principalUser?._id?.toString();
 
-    if (!userId) {
-      return ResponseEntity.forbidden();
-    }
-
     const listSongsUseCase = new ListSongsUseCase();
 
     try {

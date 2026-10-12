@@ -1,4 +1,4 @@
-﻿
+
 
 export const Partition = {
   MarketItemSeen: 'marketItemSeen',
@@ -7,7 +7,11 @@ export const Partition = {
   Notifications: 'notifications',
   Opportunities: 'opportunities',
   SearchProfiles: 'searchProfiles',
+  Songs: 'songs',
+  TrainingProgress: 'trainingProgress',
+  TrainingSessions: 'trainingSessions',
   Users: 'users',
 } as const;
+
 
 

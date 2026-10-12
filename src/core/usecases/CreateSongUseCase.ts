@@ -1,6 +1,8 @@
 import { SimpleLogger } from '../../deepcore/application/helpers/SimpleLogger';
 import { UseCase, UseCaseOptions } from '../../deepcore/contracts/UseCase';
 import { CreateSongRequestDTO, SongDTO } from '../contracts/datatransfers/SongDTO';
+import { SongResponseDTO } from '../contracts/responses/SongResponseDTO';
+import { toSongResponseDTO } from '../contracts/responses/SongResponseMapper';
 import { useReject, useResolve } from '../helpers/functions/Promises';
 import { SongService } from '../services/SongService';
 
@@ -33,8 +35,9 @@ export class CreateSongUseCase implements UseCase {
       }
 
       const song = await this.songService.create(userId, payload) as SongDTO;
+      const response = toSongResponseDTO(song) as SongResponseDTO;
 
-      return useResolve(song);
+      return useResolve(response as T);
     }
     catch (error) {
       SimpleLogger.error(`Ocurrio un error no manejado: ${error.message}`, 'CreateSongUseCase', options.requestId);

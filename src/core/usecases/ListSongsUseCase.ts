@@ -2,7 +2,7 @@ import { SimpleLogger } from '../../deepcore/application/helpers/SimpleLogger';
 import { UseCase, UseCaseOptions } from '../../deepcore/contracts/UseCase';
 import { SongDTO } from '../contracts/datatransfers/SongDTO';
 import { SongResponseDTO } from '../contracts/responses/SongResponseDTO';
-import { Dates } from '../helpers/DatesHelper';
+import { toSongResponseDTO } from '../contracts/responses/SongResponseMapper';
 import { useReject, useResolve } from '../helpers/functions/Promises';
 import { SongService } from '../services/SongService';
 
@@ -28,28 +28,7 @@ export class ListSongsUseCase implements UseCase {
       }
 
       const songs = await this.songService.listByUser(userId) as SongDTO[];
-
-      let song: SongDTO;
-      let row: SongResponseDTO;
-      let collection = new Array<SongResponseDTO>();
-
-      for (song of songs) {
-        row = {
-          id: song.id,
-          title: song.title,
-          artist: song.artist,
-          source: song.source,
-          originalKey: song.originalKey,
-          lastTargetKey: song.lastTargetKey,
-          enharmonicPreference: song.enharmonicPreference,
-          createdAt: song.createdAt,
-          createdAtLabel: Dates.millisToLocalUserDatetime(song.createdAt),
-          updatedAt: song.updatedAt,
-          updatedAtLabel: Dates.millisToLocalUserDatetime(song.updatedAt),
-        } as SongResponseDTO;
-
-        collection.push(row);
-      }
+      const collection = songs.map((song) => toSongResponseDTO(song)) as SongResponseDTO[];
 
       return useResolve(collection as T);
     }

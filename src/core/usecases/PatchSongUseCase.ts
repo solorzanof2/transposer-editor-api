@@ -1,6 +1,8 @@
 import { SimpleLogger } from '../../deepcore/application/helpers/SimpleLogger';
 import { UseCase, UseCaseOptions } from '../../deepcore/contracts/UseCase';
-import { PatchSongRequestDTO, SongDTO } from '../contracts/datatransfers/SongDTO';
+import { SongDTO } from '../contracts/datatransfers/SongDTO';
+import { SongResponseDTO } from '../contracts/responses/SongResponseDTO';
+import { toSongResponseDTO } from '../contracts/responses/SongResponseMapper';
 import { useReject, useResolve } from '../helpers/functions/Promises';
 import { SongService } from '../services/SongService';
 
@@ -8,9 +10,6 @@ import { SongService } from '../services/SongService';
 export class PatchSongUseCase implements UseCase {
 
   static readonly Error = {
-    MissingUserId: 'MissingUserId',
-    MissingSongId: 'MissingSongId',
-    InvalidSongPayload: 'InvalidSongPayload',
     SongNotFound: 'SongNotFound',
   };
 
@@ -25,21 +24,6 @@ export class PatchSongUseCase implements UseCase {
         requestId,
       } = options;
 
-      if (!userId) {
-        SimpleLogger.warning('No se recibio userId para editar cancion.', 'PatchSongUseCase', requestId);
-        return useReject(new Error(PatchSongUseCase.Error.MissingUserId));
-      }
-
-      if (!songId) {
-        SimpleLogger.warning('No se recibio songId para editar cancion.', 'PatchSongUseCase', requestId);
-        return useReject(new Error(PatchSongUseCase.Error.MissingSongId));
-      }
-
-      if (!this.isValidPayload(payload)) {
-        SimpleLogger.warning('El payload parcial de cancion es invalido.', 'PatchSongUseCase', requestId);
-        return useReject(new Error(PatchSongUseCase.Error.InvalidSongPayload));
-      }
-
       const song = await this.songService.patch(userId, songId, payload) as SongDTO | null;
 
       if (!song) {
@@ -47,16 +31,14 @@ export class PatchSongUseCase implements UseCase {
         return useReject(new Error(PatchSongUseCase.Error.SongNotFound));
       }
 
-      return useResolve(song);
+      const response = toSongResponseDTO(song) as SongResponseDTO;
+
+      return useResolve(response as T);
     }
     catch (error) {
       SimpleLogger.error(`Ocurrio un error no manejado: ${error.message}`, 'PatchSongUseCase', options.requestId);
       return useReject(error);
     }
-  }
-
-  private isValidPayload(payload: PatchSongRequestDTO): boolean {
-    return !!payload && Object.keys(payload).length > 0;
   }
 
 }

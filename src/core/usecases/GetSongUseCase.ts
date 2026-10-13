@@ -10,8 +10,6 @@ import { SongService } from '../services/SongService';
 export class GetSongUseCase implements UseCase {
 
   static readonly Error = {
-    MissingUserId: 'MissingUserId',
-    MissingSongId: 'MissingSongId',
     SongNotFound: 'SongNotFound',
   };
 
@@ -24,16 +22,6 @@ export class GetSongUseCase implements UseCase {
         songId,
         requestId,
       } = options;
-
-      if (!userId) {
-        SimpleLogger.warning('No se recibio userId para obtener cancion.', 'GetSongUseCase', requestId);
-        return useReject(new Error(GetSongUseCase.Error.MissingUserId));
-      }
-
-      if (!songId) {
-        SimpleLogger.warning('No se recibio songId para obtener cancion.', 'GetSongUseCase', requestId);
-        return useReject(new Error(GetSongUseCase.Error.MissingSongId));
-      }
 
       const song = await this.songService.getById(userId, songId) as SongDTO | null;
 

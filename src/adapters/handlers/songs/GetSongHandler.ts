@@ -1,5 +1,6 @@
 import { SongResponseDTO } from '../../../core/contracts/responses/SongResponseDTO';
 import { GetSongUseCase } from '../../../core/usecases/GetSongUseCase';
+import { SimpleLogger } from '../../../deepcore/application/helpers/SimpleLogger';
 import { ApiEvent, ApiProxyHandler, ApiProxyResult } from '../../../deepcore/application/http/HttpContracts';
 import { ResponseEntity } from '../../../deepcore/application/http/ResponseEntity';
 import { ProvideLoggerMiddleware } from '../../../deepcore/application/middlify/middleware/LoggerMiddleware';
@@ -12,11 +13,8 @@ const GetSong: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProxyResult
     const userId = event.principalUser?._id?.toString();
     const songId = event.pathParameters?.songId;
 
-    if (!userId) {
-      return ResponseEntity.forbidden();
-    }
-
     if (!songId) {
+      SimpleLogger.warning(`No se recibio un SongID valido: ${songId}`, 'GetSongHandler', event.requestId);
       return ResponseEntity.badRequest();
     }
 
@@ -32,14 +30,6 @@ const GetSong: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProxyResult
       return ResponseEntity.ok(song);
     }
     catch (error: any) {
-      if (error.message === GetSongUseCase.Error.MissingUserId) {
-        return ResponseEntity.forbidden();
-      }
-
-      if (error.message === GetSongUseCase.Error.MissingSongId) {
-        return ResponseEntity.badRequest();
-      }
-
       if (error.message === GetSongUseCase.Error.SongNotFound) {
         return ResponseEntity.notFound();
       }

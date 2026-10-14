@@ -25,7 +25,7 @@ export class GetSongUseCase implements UseCase {
 
       const song = await this.songService.getById(userId, songId) as SongDTO | null;
 
-      if (!song) {
+      if (!song?.id) {
         SimpleLogger.warning(`No se encontro la cancion ${songId}.`, 'GetSongUseCase', requestId);
         return useReject(new Error(GetSongUseCase.Error.SongNotFound));
       }
@@ -41,3 +41,4 @@ export class GetSongUseCase implements UseCase {
   }
 
 }
+

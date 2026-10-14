@@ -26,7 +26,7 @@ export class UpdateSongUseCase implements UseCase {
 
       const song = await this.songService.replace(userId, songId, payload) as SongDTO | null;
 
-      if (!song) {
+      if (!song?.id) {
         SimpleLogger.warning(`No se encontro la cancion ${songId}.`, 'UpdateSongUseCase', requestId);
         return useReject(new Error(UpdateSongUseCase.Error.SongNotFound));
       }
@@ -42,3 +42,4 @@ export class UpdateSongUseCase implements UseCase {
   }
 
 }
+

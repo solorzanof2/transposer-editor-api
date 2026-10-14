@@ -26,7 +26,7 @@ export class PatchSongUseCase implements UseCase {
 
       const song = await this.songService.patch(userId, songId, payload) as SongDTO | null;
 
-      if (!song) {
+      if (!song?.id) {
         SimpleLogger.warning(`No se encontro la cancion ${songId}.`, 'PatchSongUseCase', requestId);
         return useReject(new Error(PatchSongUseCase.Error.SongNotFound));
       }

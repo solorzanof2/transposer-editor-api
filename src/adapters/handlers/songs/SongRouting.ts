@@ -1,5 +1,6 @@
 import { Route } from '../../../deepcore/contracts/Route';
 import { CreateSongHandler } from './CreateSongHandler';
+import { DeleteSongHandler } from './DeleteSongHandler';
 import { GetSongsHandler } from './GetAllSongsHandler';
 import { GetSongHandler } from './GetSongHandler';
 import { PatchSongHandler } from './PatchSongHandler';
@@ -31,5 +32,10 @@ export const SongRouting: Route[] = [
     path: '/api/v1/songs/:songId',
     method: 'patch',
     handler: PatchSongHandler,
+  },
+  {
+    path: '/api/v1/songs/:songId',
+    method: 'delete',
+    handler: DeleteSongHandler,
   },
 ];

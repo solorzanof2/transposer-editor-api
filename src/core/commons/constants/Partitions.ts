@@ -7,11 +7,13 @@ export const Partition = {
   Notifications: 'notifications',
   Opportunities: 'opportunities',
   SearchProfiles: 'searchProfiles',
+  HarmonicTemplates: 'harmonicTemplates',
   Songs: 'songs',
   TrainingProgress: 'trainingProgress',
   TrainingSessions: 'trainingSessions',
   Users: 'users',
 } as const;
+
 
 
 

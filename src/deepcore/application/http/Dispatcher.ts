@@ -48,7 +48,7 @@ export class Dispatcher {
       context: {},
     } as ApiEvent;
 
-    if (httpRequestMethod === 'POST') {
+    if (this.hasBody(httpRequestMethod)) {
       try {
         const contentType = httpRequest.headers['content-type'] || 'application/json';
 
@@ -93,6 +93,8 @@ export class Dispatcher {
           resolve(JSON.parse(body));
           return;
         }
+
+        resolve({});
       });
     });
   }
@@ -136,6 +138,10 @@ export class Dispatcher {
     }
 
     return result;
+  }
+
+  private hasBody(method: string): boolean {
+    return ['POST', 'PUT', 'PATCH'].includes(method);
   }
 
   private send(httpResponse: any, payload?: ApiProxyResult): void {

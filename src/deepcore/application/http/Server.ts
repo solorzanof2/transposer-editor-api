@@ -118,7 +118,7 @@ export class Server {
   private preflightHandler(response: any): void {
     response.writeHead(HttpStatus.NoContent, {
       'Access-Control-Allow-Origin': `${process.env.APP_HTTP_ORIGIN}`,
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, PUT, PATCH, DELETE, OPTIONS',
       "Access-Control-Allow-Headers": "Content-Type, X-Amz-Date, X-Amz-Security-Token, Authorization, X-Api-Key, X-Requested-With, Accept, Access-Control-Allow-Methods, Access-Control-Allow-Origin, Access-Control-Allow-Headers, X-Version",
       'Access-Control-Allow-Credentials': false,
       'Access-Control-Max-Age': 1728000,

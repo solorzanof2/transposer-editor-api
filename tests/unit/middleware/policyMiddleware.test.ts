@@ -10,7 +10,7 @@ jest.mock('../../../src/adapters/persistence/UserRepository', () => ({ UserRepos
 jest.mock('../../../src/deepcore/application/utils/Security', () => ({ Security: { validateJSONWebToken: jest.fn() } }));
 
 const id = new ObjectId();
-const findById = jest.fn();
+const findOneByFilter = jest.fn();
 const validateToken = Security.validateJSONWebToken as jest.Mock;
 const mockedRepository = UserRepository as jest.MockedClass<typeof UserRepository>;
 let next: jest.MockedFunction<ApiProxyHandler>;
@@ -19,9 +19,9 @@ let event: ApiEvent;
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  mockedRepository.mockImplementation(() => ({ findById }) as unknown as UserRepository);
-  findById.mockResolvedValue({ _id: id, status: 'active', roles: ['user'] });
-  validateToken.mockResolvedValue({ sub: id.toHexString() });
+  mockedRepository.mockImplementation(() => ({ findOneByFilter }) as unknown as UserRepository);
+  findOneByFilter.mockResolvedValue({ _id: id, status: 'active', roles: ['user'] });
+  validateToken.mockResolvedValue({ email: 'test@example.com' });
   next = jest.fn().mockResolvedValue(new ApiProxyResult({ saved: true }, 201));
   event = {
     url: '/api/v1/harmonic-templates', method: 'POST', headers: { authorization: 'Bearer test-token' },
@@ -33,30 +33,30 @@ beforeEach(() => {
 afterEach(() => { jest.restoreAllMocks(); });
 
 describe('role authorization middleware', () => {
-  it('loads the user by MongoDB subject and injects the database identity', async () => {
+  it('loads the user by verified email and injects the database identity', async () => {
     const user = { _id: id, status: 'active', roles: ['user'], name: 'Test user' };
-    findById.mockResolvedValue(user);
+    findOneByFilter.mockResolvedValue(user);
     const result = await ProvidePolicyMiddleware(['user'])(event, next);
     expect(result.body.status).toBe(201);
     expect(validateToken).toHaveBeenCalledWith('test-token');
-    expect(findById).toHaveBeenCalledWith(id);
+    expect(findOneByFilter).toHaveBeenCalledWith({ email: 'test@example.com' });
     expect(event.principalUser).toBe(user);
     expect(next).toHaveBeenCalledWith(event);
   });
 
   it('accepts multiple roles when any database role is allowed', async () => {
-    findById.mockResolvedValue({ _id: id, status: 'active', roles: ['operador', 'user'] });
+    findOneByFilter.mockResolvedValue({ _id: id, status: 'active', roles: ['operador', 'user'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(201);
   });
 
   it('accepts an active superuser even when the role is not listed', async () => {
-    findById.mockResolvedValue({ _id: id, status: 'active', roles: ['sudosu'] });
+    findOneByFilter.mockResolvedValue({ _id: id, status: 'active', roles: ['sudosu'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(201);
     expect((await ProvidePolicyMiddleware([])(event, next)).body.status).toBe(201);
   });
 
   it.each([[], undefined, null, 'user', ['operador'], [{ code: 'user' }], ['SUPER_USER'], ['superuser']].map((roles) => [roles]))('rejects absent or unmatched role data: %j', async (roles) => {
-    findById.mockResolvedValue({ _id: id, status: 'active', roles });
+    findOneByFilter.mockResolvedValue({ _id: id, status: 'active', roles });
     const result = await ProvidePolicyMiddleware(['user'])(event, next);
     expect(result.body).toEqual({ status: 403, payload: '403 Forbidden' });
     expect(next).not.toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe('role authorization middleware', () => {
   });
 
   it.each(['inactive', 'deleted', undefined])('rejects a superuser whose account is not active: %s', async (status) => {
-    findById.mockResolvedValue({ _id: id, status, roles: ['sudosu'] });
+    findOneByFilter.mockResolvedValue({ _id: id, status, roles: ['sudosu'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);
     expect(next).not.toHaveBeenCalled();
   });
@@ -98,7 +98,7 @@ describe('role authorization middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it.each([{}, { sub: 'invalid-id' }, { uid: id.toHexString() }, { sub: { $ne: null } }, null])('rejects missing or malformed subjects without querying MongoDB: %j', async (principal) => {
+  it.each([{}, { email: '' }, { email: 'invalid' }, { email: { $ne: null } }, { sub: id.toHexString() }, null])('rejects missing or malformed signed emails without querying MongoDB: %j', async (principal) => {
     validateToken.mockResolvedValueOnce(principal);
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);
     expect(mockedRepository).not.toHaveBeenCalled();
@@ -106,25 +106,48 @@ describe('role authorization middleware', () => {
   });
 
   it('rejects a missing database user', async () => {
-    findById.mockResolvedValue({});
+    findOneByFilter.mockResolvedValue({});
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);
     expect(next).not.toHaveBeenCalled();
   });
 
   it('never authorizes using roles from the token, event or request body', async () => {
-    validateToken.mockResolvedValue({ sub: id.toHexString(), roles: ['sudosu'] });
+    validateToken.mockResolvedValue({ email: 'test@example.com', roles: ['sudosu'] });
     event.principalUser = { roles: ['sudosu'] };
     event.body = { roles: ['sudosu'], allowedRoles: ['operador'] };
     event.allowedRoles = ['operador'];
-    findById.mockResolvedValue({ _id: id, status: 'active', roles: ['operador'] });
+    findOneByFilter.mockResolvedValue({ _id: id, status: 'active', roles: ['operador'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it('accepts the real login JWT format without sub and rejects a tampered signature', async () => {
+    const realSecurity = jest.requireActual('../../../src/deepcore/application/utils/Security').Security;
+    validateToken.mockImplementation((token) => realSecurity.validateJSONWebToken(token));
+    const token = realSecurity.getJSONWebTokenByData({ email: 'test@example.com', name: 'Test user' });
+    event.headers = { authorization: 'Bearer ' + token };
+    expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(201);
+    expect(findOneByFilter).toHaveBeenCalledWith({ email: 'test@example.com' });
+    next.mockClear();
+    const parts = token.split('.');
+    parts[1] = Buffer.from(JSON.stringify({ email: 'other@example.com' })).toString('base64url');
+    event.headers = { authorization: 'Bearer ' + parts.join('.') };
+    expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('normalizes only the signed email and ignores client-provided identities', async () => {
+    validateToken.mockResolvedValue({ email: ' Test@Example.com ', sub: 'ignored' });
+    event.body = { email: 'attacker@example.com' };
+    event.queryStringParameters = { email: 'attacker@example.com' };
+    expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(201);
+    expect(findOneByFilter).toHaveBeenCalledWith({ email: 'test@example.com' });
   });
 
   it('reads updated database roles on each request', async () => {
     const middleware = ProvidePolicyMiddleware(['user']);
     expect((await middleware(event, next)).body.status).toBe(201);
-    findById.mockResolvedValueOnce({ _id: id, status: 'active', roles: [] });
+    findOneByFilter.mockResolvedValueOnce({ _id: id, status: 'active', roles: [] });
     expect((await middleware(event, next)).body.status).toBe(403);
     expect(next).toHaveBeenCalledTimes(1);
   });

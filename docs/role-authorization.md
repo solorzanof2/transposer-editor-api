@@ -26,8 +26,8 @@ público. La API key de aplicación sigue siendo un requisito independiente.
 ## Evaluación
 
 1. Exigir un header Bearer con un token válido, verificado por Security.
-2. Exigir sub con el _id del usuario, representado como string ObjectId válido.
-3. Consultar UserRepository.findById con ese ObjectId.
+2. Exigir un email string válido dentro del JWT cuya firma fue verificada.
+3. Consultar UserRepository.findOneByFilter con ese email normalizado (trim y minúsculas).
 4. Exigir cuenta existente con status active.
 5. Permitir sudosu o cualquier rol del usuario que esté en allowedRoles.
 6. Inyectar principalUser y ejecutar el handler.
@@ -57,17 +57,21 @@ Para admitir operador en el futuro, añadir su código a RoleCode, asignarlo al
 usuario y declararlo en los handlers permitidos. Un usuario con varios roles
 obtiene acceso cuando coincide al menos uno. No hay jerarquía ni herencia.
 
-El subject del JWT ahora debe ser sub=_id. No se usa uid heredado para buscar
-usuarios. El login devuelve un token; todavía debe incluir sub=_id y definir su
-vencimiento. La sesión del frontend sigue pendiente de integración.
-Los tokens heredados que solo tengan uid deberán sustituirse por tokens del
-nuevo contrato. No se asigna el rol sudosu automáticamente.
+El JWT actual del login identifica al usuario por email. No se exige ni se usa
+sub en esta iteración, y no se acepta identidad desde body o query. Un token sin
+email firmado no identifica una cuenta, aunque tenga sub o uid. Adoptar sub con
+un ID estable y diseñar vencimiento/refresh son tareas futuras independientes.
+No se asigna el rol sudosu automáticamente.
+
+Mientras se use email como identidad, cambiarlo invalida el vínculo del token con
+la cuenta. No debe reasignarse ese email a otro usuario mientras pueda existir
+un token válido anterior; resolver esta limitación al migrar a IDs estables.
 
 ## Comprobaciones
 
 La suite verifica usuarios con varios roles, roles desconocidos o mal formados,
 superusuario activo e inactivo, arrays vacíos, encabezados mal formados, tokens
-inválidos/expirados, subjects inválidos, usuarios inexistentes, actualización de
+inválidos/expirados, emails firmados inválidos, usuarios inexistentes, actualización de
 roles en DB, inyección de identidad y propagación de errores del handler.
 Todas las pruebas usan repositorios y validación JWT controlados en tests;
 no modifican registros reales ni generan sesiones de producción.
@@ -79,7 +83,7 @@ El código especial de superusuario ahora es sudosu. El código anterior superus
 ya no activa el bypass; actualizar explícitamente las cuentas que lo utilizasen.
 No se modifican usuarios de MongoDB automáticamente.
 
-El login ahora devuelve token. Aún debe adaptarse su payload para incluir sub=_id,
-requerido por el middleware, y definir el vencimiento antes de conectar la sesión
-del frontend. La emisión del token por sí sola no demuestra acceso a recursos
-protegidos. Redis quedó desactivado en el boot de servicios según el ajuste local.
+El login devuelve token y el middleware admite su formato actual sin sub.
+La sesión frontend ahora se restaura desde sessionStorage al recargar; ver
+[auth-session-roadmap.md](auth-session-roadmap.md). Redis permanece desactivado
+según el ajuste previo. Las pruebas controladas no demuestran persistencia real.

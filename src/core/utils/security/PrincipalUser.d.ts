@@ -1,6 +1,7 @@
-/** El subject del JWT identifica el _id del usuario en MongoDB. */
+/** Identidad firmada del login actual; migrar a sub estable en otra iteración. */
 export interface PrincipalUserDTO {
-  sub: string;
+  email: string;
+  sub?: string;
   iat?: number;
   exp?: number;
 }

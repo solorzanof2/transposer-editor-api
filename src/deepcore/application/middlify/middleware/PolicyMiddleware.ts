@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import { UserRepository } from '../../../../adapters/persistence/UserRepository';
 import { GlobalStatus } from '../../../../core/commons/constants/GlobalConstants';
 import { RoleCode, RoleCodes } from '../../../../core/domain/Role';
@@ -22,12 +21,13 @@ const PolicyMiddleware = async (
     if (!match) throw new Error('invalid_authorization');
 
     const tokenInfo = await Security.validateJSONWebToken<PrincipalUserDTO>(match[1]);
-    if (typeof tokenInfo?.sub !== 'string' || !ObjectId.isValid(tokenInfo.sub)) {
-      throw new Error('invalid_subject');
+    // Identidad firmada del login actual; nunca leerla del body o query.
+    if (typeof tokenInfo?.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tokenInfo.email.trim())) {
+      throw new Error('invalid_identity');
     }
 
     const userRepository = new UserRepository();
-    user = await userRepository.findById(new ObjectId(tokenInfo.sub));
+    user = await userRepository.findOneByFilter({ email: tokenInfo.email.trim().toLowerCase() });
     if (!user?._id || user.status !== GlobalStatus.Active || !userCanProceed(user.roles, allowedRoles)) {
       throw new Error('user_access_denied');
     }

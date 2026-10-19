@@ -43,6 +43,6 @@ plantillas. No equivalen a probar una cuenta real contra MongoDB.
 ## Navegación frontend
 
 La URL mantiene view, songId y templateId, con soporte Atrás/Adelante y recarga.
-Las canciones aún se resuelven desde IndexedDB; su migración al backend y la
-edición/clonación de plantillas son las próximas entregas. Ver
+El cancionero usa CRUD remoto y se integraron edición/clonación de plantillas.
+La importación del origen de producción y los borradores offline quedan pendientes. Ver
 ../transposer-editor/docs/navigation.md para parámetros y límites.

@@ -60,5 +60,5 @@ const UpdateSong: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProxyRes
 
 export const UpdateSongHandler = Middlify(UpdateSong, [
   ProvideLoggerMiddleware('UpdateSongHandler'),
-  ProvidePolicyMiddleware(),
+  ProvidePolicyMiddleware(['user']),
 ]);

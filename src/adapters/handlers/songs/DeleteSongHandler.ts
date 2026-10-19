@@ -44,5 +44,5 @@ const DeleteSong: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProxyRes
 
 export const DeleteSongHandler = Middlify(DeleteSong, [
   ProvideLoggerMiddleware('DeleteSongHandler'),
-  ProvidePolicyMiddleware(),
+  ProvidePolicyMiddleware(['user']),
 ]);

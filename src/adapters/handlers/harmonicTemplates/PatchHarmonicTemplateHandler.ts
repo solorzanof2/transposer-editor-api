@@ -90,5 +90,5 @@ const isValidSections = (sections: HarmonicTemplateSection[]): boolean => {
 
 export const PatchHarmonicTemplateHandler = Middlify(PatchHarmonicTemplate, [
   ProvideLoggerMiddleware('PatchHarmonicTemplateHandler'),
-  ProvidePolicyMiddleware(),
+  ProvidePolicyMiddleware(['user']),
 ]);

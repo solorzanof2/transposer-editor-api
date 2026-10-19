@@ -58,5 +58,5 @@ const CloneHarmonicTemplate: ApiProxyHandler = async (event: ApiEvent): Promise<
 
 export const CloneHarmonicTemplateHandler = Middlify(CloneHarmonicTemplate, [
   ProvideLoggerMiddleware('CloneHarmonicTemplateHandler'),
-  ProvidePolicyMiddleware(),
+  ProvidePolicyMiddleware(['user']),
 ]);

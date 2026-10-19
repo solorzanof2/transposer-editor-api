@@ -44,5 +44,5 @@ const DeleteHarmonicTemplate: ApiProxyHandler = async (event: ApiEvent): Promise
 
 export const DeleteHarmonicTemplateHandler = Middlify(DeleteHarmonicTemplate, [
   ProvideLoggerMiddleware('DeleteHarmonicTemplateHandler'),
-  ProvidePolicyMiddleware(),
+  ProvidePolicyMiddleware(['user']),
 ]);

@@ -45,5 +45,5 @@ const GetHarmonicTemplate: ApiProxyHandler = async (event: ApiEvent): Promise<Ap
 
 export const GetHarmonicTemplateHandler = Middlify(GetHarmonicTemplate, [
   ProvideLoggerMiddleware('GetHarmonicTemplateHandler'),
-  ProvidePolicyMiddleware(),
+  ProvidePolicyMiddleware(['user']),
 ]);

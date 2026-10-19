@@ -1,7 +1,7 @@
 
 
 export const RegularExpression = {
-  Email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/gi,
+  Email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i,
   SourcePath: /src[\s\S]*/,
 }
 

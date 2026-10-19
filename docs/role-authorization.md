@@ -7,7 +7,7 @@ ProvidePolicyMiddleware(['user'])
 ```
 
 RoleCode se define en src/core/domain/Role.ts. Inicialmente reconoce user y
-superuser. El usuario guarda roles como un array de códigos en MongoDB:
+sudosu. El usuario guarda roles como un array de códigos en MongoDB:
 
 ```json
 {
@@ -29,14 +29,14 @@ público. La API key de aplicación sigue siendo un requisito independiente.
 2. Exigir sub con el _id del usuario, representado como string ObjectId válido.
 3. Consultar UserRepository.findById con ese ObjectId.
 4. Exigir cuenta existente con status active.
-5. Permitir superuser o cualquier rol del usuario que esté en allowedRoles.
+5. Permitir sudosu o cualquier rol del usuario que esté en allowedRoles.
 6. Inyectar principalUser y ejecutar el handler.
 
 allowedRoles se captura por closure con una copia del array; no se inyecta
 como configuración en Event. Los roles de tokens, body o propiedades del Event
 no conceden acceso: siempre se lee el usuario de MongoDB en cada solicitud.
 
-Una lista vacía permite únicamente superuser. El superusuario omite solo la
+Una lista vacía permite únicamente sudosu. El superusuario omite solo la
 comparación de roles; no omite JWT, existencia de cuenta o estado activo.
 No hay bypass de las consultas por propietario: el acceso administrativo a
 recursos de otros usuarios no se implementa con este cambio.
@@ -58,10 +58,10 @@ usuario y declararlo en los handlers permitidos. Un usuario con varios roles
 obtiene acceso cuando coincide al menos uno. No hay jerarquía ni herencia.
 
 El subject del JWT ahora debe ser sub=_id. No se usa uid heredado para buscar
-usuarios. Este fix no cambia el login para emitir JWT ni implementa la sesión
-del frontend; esa integración sigue siendo necesaria para el flujo autorizado.
+usuarios. El login devuelve un token; todavía debe incluir sub=_id y definir su
+vencimiento. La sesión del frontend sigue pendiente de integración.
 Los tokens heredados que solo tengan uid deberán sustituirse por tokens del
-nuevo contrato. No hay generación de tokens ni asignación de superuser automática.
+nuevo contrato. No se asigna el rol sudosu automáticamente.
 
 ## Comprobaciones
 
@@ -72,5 +72,14 @@ roles en DB, inyección de identidad y propagación de errores del handler.
 Todas las pruebas usan repositorios y validación JWT controlados en tests;
 no modifican registros reales ni generan sesiones de producción.
 
-Resultado: 36 pruebas aprobadas en dos suites y compilación TypeScript correcta.
+Resultado de la revisión inicial: 36 pruebas aprobadas en dos suites y compilación TypeScript correcta.
 Se actualizaron los doce handlers protegidos de canciones y plantillas.
+
+El código especial de superusuario ahora es sudosu. El código anterior superuser
+ya no activa el bypass; actualizar explícitamente las cuentas que lo utilizasen.
+No se modifican usuarios de MongoDB automáticamente.
+
+El login ahora devuelve token. Aún debe adaptarse su payload para incluir sub=_id,
+requerido por el middleware, y definir el vencimiento antes de conectar la sesión
+del frontend. La emisión del token por sí sola no demuestra acceso a recursos
+protegidos. Redis quedó desactivado en el boot de servicios según el ajuste local.

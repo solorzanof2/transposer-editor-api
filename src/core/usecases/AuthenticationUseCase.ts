@@ -46,6 +46,8 @@ export class AuthenticationUseCase implements UseCase {
         createdAtLabel: Dates.millisToLocalUserDatetime(user.createdAt),
       } as AuthenticationDTO;
 
+      userProfile.token = Security.getJSONWebTokenByData(userProfile);
+
       return useResolve(userProfile);
     }
     catch (error) {

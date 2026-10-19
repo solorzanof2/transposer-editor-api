@@ -8,6 +8,7 @@ export interface AuthenticationDTO {
   statusLabel: string;
   createdAt: number;
   createdAtLabel: string;
+  token: string;
 
 }
 

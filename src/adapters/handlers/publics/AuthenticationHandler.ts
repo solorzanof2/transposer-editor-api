@@ -25,7 +25,7 @@ const Authentication: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProx
     }
 
     if (!password) {
-      SimpleLogger.warning(`El password es invalido: ${password}`, 'AuthenticationHandler', event.requestId);
+      SimpleLogger.warning(`El password es invalido`, 'AuthenticationHandler', event.requestId);
       return ResponseEntity.badRequest();
     }
 
@@ -44,7 +44,7 @@ const Authentication: ApiProxyHandler = async (event: ApiEvent): Promise<ApiProx
       }
 
       if (error.message === AuthenticationUseCase.Error.EmailOrPassword) {
-        SimpleLogger.warning(`El password: ${password} con coincide con el almacenado`, 'AuthenticationHandler', event.requestId);
+        SimpleLogger.warning(`El password con coincide con el almacenado`, 'AuthenticationHandler', event.requestId);
         return ResponseEntity.conflict('email_or_password_error');
       }
 

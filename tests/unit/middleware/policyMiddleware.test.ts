@@ -50,12 +50,12 @@ describe('role authorization middleware', () => {
   });
 
   it('accepts an active superuser even when the role is not listed', async () => {
-    findById.mockResolvedValue({ _id: id, status: 'active', roles: ['superuser'] });
+    findById.mockResolvedValue({ _id: id, status: 'active', roles: ['sudosu'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(201);
     expect((await ProvidePolicyMiddleware([])(event, next)).body.status).toBe(201);
   });
 
-  it.each([[], undefined, null, 'user', ['operador'], [{ code: 'user' }], ['SUPER_USER']].map((roles) => [roles]))('rejects absent or unmatched role data: %j', async (roles) => {
+  it.each([[], undefined, null, 'user', ['operador'], [{ code: 'user' }], ['SUPER_USER'], ['superuser']].map((roles) => [roles]))('rejects absent or unmatched role data: %j', async (roles) => {
     findById.mockResolvedValue({ _id: id, status: 'active', roles });
     const result = await ProvidePolicyMiddleware(['user'])(event, next);
     expect(result.body).toEqual({ status: 403, payload: '403 Forbidden' });
@@ -63,7 +63,7 @@ describe('role authorization middleware', () => {
   });
 
   it('does not give regular users access to a superuser-only handler', async () => {
-    expect((await ProvidePolicyMiddleware(['superuser'])(event, next)).body.status).toBe(403);
+    expect((await ProvidePolicyMiddleware(['sudosu'])(event, next)).body.status).toBe(403);
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -73,7 +73,7 @@ describe('role authorization middleware', () => {
   });
 
   it.each(['inactive', 'deleted', undefined])('rejects a superuser whose account is not active: %s', async (status) => {
-    findById.mockResolvedValue({ _id: id, status, roles: ['superuser'] });
+    findById.mockResolvedValue({ _id: id, status, roles: ['sudosu'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);
     expect(next).not.toHaveBeenCalled();
   });
@@ -112,9 +112,9 @@ describe('role authorization middleware', () => {
   });
 
   it('never authorizes using roles from the token, event or request body', async () => {
-    validateToken.mockResolvedValue({ sub: id.toHexString(), roles: ['superuser'] });
-    event.principalUser = { roles: ['superuser'] };
-    event.body = { roles: ['superuser'], allowedRoles: ['operador'] };
+    validateToken.mockResolvedValue({ sub: id.toHexString(), roles: ['sudosu'] });
+    event.principalUser = { roles: ['sudosu'] };
+    event.body = { roles: ['sudosu'], allowedRoles: ['operador'] };
     event.allowedRoles = ['operador'];
     findById.mockResolvedValue({ _id: id, status: 'active', roles: ['operador'] });
     expect((await ProvidePolicyMiddleware(['user'])(event, next)).body.status).toBe(403);

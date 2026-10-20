@@ -46,3 +46,12 @@ La URL mantiene view, songId y templateId, con soporte Atrás/Adelante y recarga
 El cancionero usa CRUD remoto y se integraron edición/clonación de plantillas.
 La importación del origen de producción y los borradores offline quedan pendientes. Ver
 ../transposer-editor/docs/navigation.md para parámetros y límites.
+
+## Diseño de borradores offline
+
+Contrato propuesto en [offline-song-sync-contract.md](offline-song-sync-contract.md),
+con fases locales y remotas descritas en el
+[diseño de frontend](../../transposer-editor/docs/offline-song-drafts-design.md). El siguiente requisito
+es exponer id estable en el perfil para particionar borradores; no requiere
+adelantar sub, cookies ni refresh. Versiones/idempotencia son prerrequisitos
+de sincronización fiable y no están implementadas en el CRUD actual.
